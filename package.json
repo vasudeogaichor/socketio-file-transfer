@@ -1,0 +1,11 @@
+{
+  "name": "socketio-file-transfer",
+  "version": "1.0.0",
+  "description": "Use socket.io ideally for large file transfers.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Vasudeo Gaichor",
+  "license": "ISC"
+}
