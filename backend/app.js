@@ -2,38 +2,38 @@ const restify = require('restify');
 const socketIo = require('socket.io');
 const fs = require('fs');
 
-const fileHandlers = require('./fileHandlers');
-
 const server = restify.createServer();
 
 const io = socketIo(server.server, {
     cors: {
-        origin: "http://192.168.0.20:8503"
-    }
+        // origin: "http://192.168.0.20:8503"
+        origin: "http://localhost:8503"
+    },
+    maxHttpBufferSize: 8192 * 1024 * 1024,
 });
-
-// const onConnection = (socket) => {
-//     fileHandlers(socket);
-// }
-
-// // Socket.io connections
-// io.on('connection', onConnection);
 
 io.on('connection', (socket) => {
     console.log('User connected.');
 
-    socket.on('file:upload', (data) => {
-        console.log('Data received:', data);
-        const filename = __dirname + '/uploads/' + data.name;
-        const fileStream = fs.createWriteStream(filename, { flags: 'a' }); // 'a' flag for append mode
+    socket.on('file:upload', ({ content, name }) => {
+        const filePath = __dirname + '/uploads/' + name;
+        const writable = fs.createWriteStream(filePath, { flags: 'a' }); // 'a' flag to append to existing file
 
-        fileStream.write(data.content);
-        fileStream.end();
+        const fileBuffer = Buffer.from(content);
+        writable.write(fileBuffer);
 
-        fileStream.on('finish', () => {
-            console.log('File saved:', data.name);
-            socket.emit('file:upload:finished');
-        });
+        // writable.end(() => {
+        // });
+    });
+
+    socket.on('file:upload:progress', (data) => {
+        const { progress } = data;
+        console.log('progress - ',progress)
+        socket.emit('file:upload:progress', progress);
+    });
+
+    socket.on('file:upload:finished', () => {
+        socket.emit('file:upload:finished');
     });
 });
 
