@@ -1,66 +1,71 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ProgressBar from 'react-bootstrap/ProgressBar';
 import { Form, Button } from 'react-bootstrap';
 import { socket } from "../../socket";
+
+const CHUNK_SIZE = 1024 * 1024;
 
 const FileUpload = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
-    const [status, setStatus] = useState('');
+    const fileInputRef = useRef();
     const [progress, setProgress] = useState(null);
-    console.log('isUploading - ', isUploading)
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
-        console.log('selectedFile - ', e.target.files[0])
     };
 
-    const handleUpload = () => {
+    const handleUpload = (e) => {
+        e.preventDefault();
+
         if (!selectedFile) {
-          alert("Please select a file to upload.");
-          return;
+            alert("Please select a file to upload.");
+            return;
         }
-    
-        const chunkSize = 5 * 1024 * 1024; // 5MB (adjust based on your requirements)
-        const totalChunks = Math.ceil(selectedFile.size / chunkSize);
-        const chunkProgress = 100 / totalChunks;
-        let chunkNumber = 0;
-        let start = 0;
-        let end = 0;
-    
-        const uploadNextChunk = async () => {
-          if (end <= selectedFile.size) {
-            const chunk = selectedFile.slice(start, end);
-            socket.emit('file:upload', { 
-              name: selectedFile.name, 
-              content: chunk,
-              chunkNumber: chunkNumber,
-              totalChunks: totalChunks,
-              originalname: selectedFile.name
-            });
-    
-            const temp = `Chunk ${chunkNumber + 1}/${totalChunks} uploaded successfully`;
-            setStatus(temp);
-            setProgress(Number((chunkNumber + 1) * chunkProgress));
-            console.log(temp);
-            chunkNumber++;
-            start = end;
-            end = start + chunkSize;
-            uploadNextChunk();
-          } else {
-            setProgress(100);
-            setSelectedFile(null);
-            setStatus("File upload completed");
-          }
+
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(selectedFile);
+
+        reader.onload = async () => {
+            setIsUploading(true);
+
+            const buffer = reader.result;
+            const totalSize = buffer.byteLength;
+            let bytesUploaded = 0;
+
+            while (bytesUploaded < totalSize) {
+                const chunk = buffer.slice(bytesUploaded, bytesUploaded + CHUNK_SIZE);
+                bytesUploaded += chunk.byteLength;
+
+                socket.emit('file:upload', { content: chunk, name: selectedFile.name });
+
+                // Calculate and emit progress
+                const progress = Math.round((bytesUploaded / totalSize) * 100);
+                socket.emit('file:upload:progress', { name: selectedFile?.name, progress });
+
+                // Optional - Add delay if needed to avoid overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            socket.emit('file:upload:finished');
         };
-    
-        uploadNextChunk();
-      };
-    
+    };
+
     useEffect(() => {
         socket.on('file:upload:finished', () => {
+            setSelectedFile(null);
             setIsUploading(false);
-        })
+            setProgress(null);
+            fileInputRef.current.value = '';
+        });
 
-        return () => socket.off('file:upload:finished');
+        socket.on('file:upload:progress', (data) => {
+            setProgress(data);
+        });
+
+        return () => {
+            socket.off('file:upload:finished');
+            socket.off('file:upload:progress');
+        };
     }, []);
 
     return (
@@ -73,11 +78,14 @@ const FileUpload = () => {
                             <Form onSubmit={handleUpload}>
                                 <Form.Group controlId="formFile" className="mb-3">
                                     <Form.Label>Select file to upload</Form.Label>
-                                    <Form.Control type="file" onChange={handleFileChange} disabled={isUploading} />
+                                    <Form.Control ref={fileInputRef} type="file" onChange={handleFileChange} disabled={isUploading} />
                                 </Form.Group>
                                 <Button variant="primary" type="submit" disabled={isUploading}>Upload</Button>
                             </Form>
                             {isUploading && <p>Uploading...</p>}
+                            {progress && (
+                                <ProgressBar now={progress} label={`${progress}%`} visuallyHidden />
+                            )}
                         </div>
                     </div>
                 </div>

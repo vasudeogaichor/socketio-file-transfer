@@ -6,8 +6,8 @@ const server = restify.createServer();
 
 const io = socketIo(server.server, {
     cors: {
-        // origin: "http://192.168.0.20:8503"
-        origin: "http://localhost:8503"
+        origin: "http://192.168.0.20:8503"
+        // origin: "http://localhost:8503"
     },
     maxHttpBufferSize: 8192 * 1024 * 1024,
 });
