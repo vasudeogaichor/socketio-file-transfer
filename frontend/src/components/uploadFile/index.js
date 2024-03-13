@@ -1,12 +1,26 @@
 import React, { useState } from 'react';
-import ss from 'socket.io-stream';
-import { socket } from '../../socket';
+import Form from 'react-bootstrap/Form';
 
-export default function UploadFile () {
-    const [file, setFile] = useState(null);
+const FileUpload = () => {
+    const [selectedFile, setSelectedFile] = useState(null);
+
+    const handleFileChange = (e) => {
+        setSelectedFile(e.target.files[0]);
+    };
+
+    const handleUpload = () => {
+        // Perform upload logic here
+        console.log('Selected file:', selectedFile);
+    };
+
     return (
-        <div>
-            this is upload page
-        </div>
-    )
-}
+        <>
+            <Form.Group controlId="formFileLg" className="mb-3">
+                <Form.Label>Large file input example</Form.Label>
+                <Form.Control type="file" size="lg" />
+            </Form.Group>
+        </>
+    );
+};
+
+export default FileUpload;
