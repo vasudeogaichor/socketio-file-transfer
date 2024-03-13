@@ -1,21 +1,21 @@
-const ss = require('socket.io-stream');
-const fs = require('fs');
+// const fs = require('fs');
 
-module.exports = (socket) => {
-    console.log('User connected.')
+// module.exports = (socket) => {
+//     console.log('User connected.')
 
-    ss(socket).on('file:upload', async (stream, data) => {
-        const filename = __dirname + '/uploads/' + data.name;
-        const fileWriter = fs.createWriteStream(filename);
+//     socket.on('file:upload', (data) => {
+//         console.log('data - ', data)
+//         const filename = __dirname + '/uploads/' + data.name;
+//         const fileStream = fs.createWriteStream(filename);
 
-        let totalBytes = 0;
+//         data.content.forEach((chunk) => {
+//             fileStream.write(chunk);
+//         });
 
-        stream.on('data', (data) => {
-            totalBytes += data.length;
-            const progress = totalBytes / data.size;
-            socket.emit('progress', { name: data.name, progress });
-        });
+//         fileStream.end();
 
-        stream.pipe(fileWriter);
-    });
-}
+//         fileStream.on('finish', () => {
+//             console.log('File saved:', data.name);
+//         });
+//     });
+// }
