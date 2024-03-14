@@ -97,12 +97,17 @@ const FileUpload = () => {
             setUploadedFiles(data.data)
         });
 
+        socket.on('file:delete:success', () => {
+            socket.emit('file:list');
+        });
+
         return () => {
             socket.off('file:upload:finished');
             socket.off('file:upload:progress');
             socket.off('file:upload:error');
             socket.off('file:upload:start');
             socket.off('file:list');
+            socket.off('file:delete:success');
         };
     });
 
