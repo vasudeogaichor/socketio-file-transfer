@@ -112,7 +112,7 @@ const FileUpload = () => {
                                 <ProgressBar now={progress} label={`${progress}%`} visuallyHidden />
                             )}
                             {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
-                            {errorMsg && (<div className="mt-5"><Alert key="danger" variant="danger"> {errorMsg} </Alert></div>)}
+                            {errorMsg && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
                             {/* {errorMsg} */}
                         </div>
                     </div>
