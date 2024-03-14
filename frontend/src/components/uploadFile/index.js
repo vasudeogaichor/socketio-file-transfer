@@ -6,7 +6,7 @@ const CHUNK_SIZE = 1024 * 1024;
 
 const FileUpload = () => {
     const [selectedFile, setSelectedFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isUploading, setIsUploading] = useState(null);
     const fileInputRef = useRef();
     const [progress, setProgress] = useState(null);
     const [startTime, setStartTime] = useState(null);
@@ -60,7 +60,7 @@ const FileUpload = () => {
             return;
         }
 
-        socket.emit('file:upload:start', {name: selectedFile.name});
+        socket.emit('file:upload:start', { name: selectedFile.name });
     };
 
     useEffect(() => {
@@ -106,12 +106,12 @@ const FileUpload = () => {
                                 </Form.Group>
                                 <Button className="mb-10" variant="primary" type="submit" disabled={isUploading}>Upload</Button>
                             </Form>
-                            {isUploading && <p>Uploading...</p>}
-                            {progress && (
-                                <div className="mt-5"><ProgressBar now={progress} label={`${progress}%`} visuallyHidden /></div>
+                            {isUploading && <p>Uploading... Do not refresh the page.</p>}
+                            {(progress > 0) && (
+                                <div className=""><ProgressBar now={progress} label={`${progress}%`} visuallyHidden /></div>
                             )}
                             {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
-                            {errorMsg && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
+                            {(errorMsg > 0) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
                         </div>
                     </div>
                 </div>
