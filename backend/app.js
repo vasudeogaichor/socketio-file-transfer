@@ -15,8 +15,21 @@ const io = socketIo(server.server, {
 io.on('connection', (socket) => {
     console.log('User connected.');
 
+    socket.on('file:upload:start', ({ name }) => {
+        const filePath = __dirname + '/uploads/' + name;
+
+        fs.exists(filePath, (exists) => {
+            if (exists) {
+                socket.emit('file:upload:error', { message: 'File with the same name already exists. Please rename your file.' });
+            } else {
+                socket.emit('file:upload:start')
+            }
+        });
+    });
+
     socket.on('file:upload', ({ content, name }) => {
         const filePath = __dirname + '/uploads/' + name;
+
         const writable = fs.createWriteStream(filePath, { flags: 'a' }); // 'a' flag to append to existing file
 
         const fileBuffer = Buffer.from(content);
