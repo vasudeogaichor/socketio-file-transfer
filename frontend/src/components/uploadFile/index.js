@@ -20,38 +20,37 @@ const FileUpload = () => {
         if (errorMsg) setErrorMsg(null);
         setStartTime(null);
     };
+
     let totalTime = endTime && startTime ? endTime - startTime : null;
 
-    const upload = () => {
+    const upload = async () => {
         totalTime = null;
         setStartTime(Date.now());
 
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(selectedFile);
+        let start = 0;
+        let end = Math.min(CHUNK_SIZE, selectedFile.size);
 
-        reader.onload = async () => {
-            setIsUploading(true);
+        setIsUploading(true);
 
-            const buffer = reader.result;
-            const totalSize = buffer.byteLength;
-            let bytesUploaded = 0;
+        while (start < selectedFile.size) {
+            const chunk = selectedFile.slice(start, end);
 
-            while (bytesUploaded < totalSize) {
-                const chunk = buffer.slice(bytesUploaded, bytesUploaded + CHUNK_SIZE);
-                bytesUploaded += chunk.byteLength;
+            // Emit the chunk to the server
+            socket.emit('file:upload', { content: chunk, name: selectedFile.name });
 
-                socket.emit('file:upload', { content: chunk, name: selectedFile.name });
+            // Calculate and emit progress
+            const progress = Math.round((end / selectedFile.size) * 100);
+            socket.emit('file:upload:progress', { name: selectedFile.name, progress });
 
-                // Calculate and emit progress
-                const progress = Math.round((bytesUploaded / totalSize) * 100);
-                socket.emit('file:upload:progress', { name: selectedFile?.name, progress });
+            // Update start and end for the next chunk
+            start = end;
+            end = Math.min(start + CHUNK_SIZE, selectedFile.size);
 
-                // Optional - Add delay if needed to avoid overwhelming the server
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
+            // Optional - Add delay if needed to avoid overwhelming the server
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-            socket.emit('file:upload:finished');
-        };
+        socket.emit('file:upload:finished');
     };
 
     const handleUpload = (e) => {

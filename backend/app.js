@@ -57,7 +57,6 @@ io.on('connection', (socket) => {
                 return;
             }
             files = files.filter(file => file != '.gitkeep');
-            console.log('files - ', files)
 
             const fileDetails = files.map(file => {
                 const filePath = uploadDir + file;
