@@ -71,6 +71,25 @@ io.on('connection', (socket) => {
             socket.emit('file:list', { data: fileDetails });
         });
     });
+
+    socket.on('file:delete', async ({ name }) => {
+        const filePath = __dirname + '/uploads/' + name;
+    
+        fs.access(filePath, fs.constants.F_OK, async (err) => {
+            if (err) {
+                // File does not exist
+                socket.emit('file:delete:error', { message: 'File not found' });
+            } else {
+                // File exists, delete it asynchronously
+                try {
+                    await fs.promises.unlink(filePath);
+                    socket.emit('file:delete:success');
+                } catch (err) {
+                    socket.emit('file:delete:error', { message: 'Failed to delete file' });
+                }
+            }
+        });
+    });
 });
 
 // Start server
