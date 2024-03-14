@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Alert, ProgressBar } from 'react-bootstrap';
 import { socket } from "../../socket";
+import FilesTable from "./filesTable";
 
 const CHUNK_SIZE = 1024 * 1024;
 
@@ -12,6 +13,7 @@ const FileUpload = () => {
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
+    const [uploadedFiles, setUploadedFiles] = useState(null);
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
@@ -64,12 +66,17 @@ const FileUpload = () => {
     };
 
     useEffect(() => {
+        socket.emit('file:list');
+    }, []);
+
+    useEffect(() => {
         socket.on('file:upload:finished', () => {
             setEndTime(Date.now());
             setSelectedFile(null);
             setIsUploading(false);
             setProgress(null);
             fileInputRef.current.value = '';
+            socket.emit('file:list');
         });
 
         socket.on('file:upload:progress', (data) => {
@@ -84,11 +91,19 @@ const FileUpload = () => {
             upload();
         });
 
+        socket.on('file:list', (data) => {
+            if (data?.error) {
+                setErrorMsg(data.error)
+            }
+            setUploadedFiles(data.data)
+        });
+
         return () => {
             socket.off('file:upload:finished');
             socket.off('file:upload:progress');
             socket.off('file:upload:error');
             socket.off('file:upload:start');
+            socket.off('file:list');
         };
     });
 
@@ -114,6 +129,11 @@ const FileUpload = () => {
                             {(errorMsg > 0) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
                         </div>
                     </div>
+                </div>
+            </div>
+            <div className="row justify-content-center mt-5">
+                <div className="col-10">
+                    <FilesTable uploadedFiles={uploadedFiles} />
                 </div>
             </div>
         </div>
