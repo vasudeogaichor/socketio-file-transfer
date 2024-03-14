@@ -7,7 +7,6 @@ const server = restify.createServer();
 const io = socketIo(server.server, {
     cors: {
         origin: "http://192.168.0.20:8503"
-        // origin: "http://localhost:8503"
     },
     maxHttpBufferSize: 1024 * 1024,
 });
@@ -46,6 +45,32 @@ io.on('connection', (socket) => {
 
     socket.on('file:upload:finished', () => {
         socket.emit('file:upload:finished');
+    });
+
+    socket.on('file:list', () => {
+        const uploadDir = __dirname + '/uploads/';
+        fs.readdir(uploadDir, (err, files) => {
+            if (err) {
+                socket.emit('file:list', {
+                    error: 'Failed to list files'
+                })
+                return;
+            }
+            files = files.filter(file => file != '.gitkeep');
+            console.log('files - ', files)
+
+            const fileDetails = files.map(file => {
+                const filePath = uploadDir + file;
+                const stats = fs.statSync(filePath);
+                return {
+                    name: file,
+                    created_at: stats.birthtime,
+                    size: (stats.size / (1024)).toFixed(2)
+                };
+            });
+
+            socket.emit('file:list', { data: fileDetails });
+        });
     });
 });
 
