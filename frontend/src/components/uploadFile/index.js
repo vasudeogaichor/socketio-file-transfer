@@ -77,7 +77,6 @@ const FileUpload = () => {
         });
 
         socket.on('file:upload:error', (data) => {
-            console.log('error - ', data.message)
             setErrorMsg(data.message);
         });
 
@@ -91,7 +90,7 @@ const FileUpload = () => {
             socket.off('file:upload:error');
             socket.off('file:upload:start');
         };
-    }, []);
+    });
 
     return (
         <div className="container mt-5">
@@ -113,7 +112,6 @@ const FileUpload = () => {
                             )}
                             {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
                             {errorMsg && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
-                            {/* {errorMsg} */}
                         </div>
                     </div>
                 </div>

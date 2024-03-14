@@ -41,7 +41,6 @@ io.on('connection', (socket) => {
 
     socket.on('file:upload:progress', (data) => {
         const { progress } = data;
-        console.log('progress - ',progress)
         socket.emit('file:upload:progress', progress);
     });
 
