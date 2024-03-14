@@ -9,7 +9,7 @@ const io = socketIo(server.server, {
         origin: "http://192.168.0.20:8503"
         // origin: "http://localhost:8503"
     },
-    maxHttpBufferSize: 8192 * 1024 * 1024,
+    maxHttpBufferSize: 1024 * 1024,
 });
 
 io.on('connection', (socket) => {
