@@ -10,7 +10,6 @@
   "author": "Vasudeo Gaichor",
   "license": "ISC",
   "dependencies": {
-    "util": "^0.12.5"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
