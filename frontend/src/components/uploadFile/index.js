@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ProgressBar from 'react-bootstrap/ProgressBar';
-import { Form, Button } from 'react-bootstrap';
+import { Form, Button, Alert, ProgressBar } from 'react-bootstrap';
 import { socket } from "../../socket";
 
 const CHUNK_SIZE = 1024 * 1024;
@@ -12,20 +11,16 @@ const FileUpload = () => {
     const [progress, setProgress] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
+    const [errorMsg, setErrorMsg] = useState(null);
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
+        if (errorMsg) setErrorMsg(null);
+        setStartTime(null);
     };
     let totalTime = endTime && startTime ? endTime - startTime : null;
 
-    const handleUpload = (e) => {
-        e.preventDefault();
-
-        if (!selectedFile) {
-            alert("Please select a file to upload.");
-            return;
-        }
-
+    const upload = () => {
         totalTime = null;
         setStartTime(Date.now());
 
@@ -57,6 +52,17 @@ const FileUpload = () => {
         };
     };
 
+    const handleUpload = (e) => {
+        e.preventDefault();
+
+        if (!selectedFile) {
+            alert("Please select a file to upload.");
+            return;
+        }
+
+        socket.emit('file:upload:start', {name: selectedFile.name});
+    };
+
     useEffect(() => {
         socket.on('file:upload:finished', () => {
             setEndTime(Date.now());
@@ -70,16 +76,27 @@ const FileUpload = () => {
             setProgress(data);
         });
 
+        socket.on('file:upload:error', (data) => {
+            console.log('error - ', data.message)
+            setErrorMsg(data.message);
+        });
+
+        socket.on('file:upload:start', () => {
+            upload();
+        });
+
         return () => {
             socket.off('file:upload:finished');
             socket.off('file:upload:progress');
+            socket.off('file:upload:error');
+            socket.off('file:upload:start');
         };
     }, []);
 
     return (
         <div className="container mt-5">
             <div className="row justify-content-center">
-                <div className="col-8">
+                <div className="col-10">
                     <div className="card text-center">
                         <div className="card-body">
                             <h5 className="card-title">Upload a File</h5>
@@ -88,13 +105,15 @@ const FileUpload = () => {
                                     <Form.Label>Select file to upload</Form.Label>
                                     <Form.Control ref={fileInputRef} type="file" onChange={handleFileChange} disabled={isUploading} />
                                 </Form.Group>
-                                <Button variant="primary" type="submit" disabled={isUploading}>Upload</Button>
+                                <Button className="mb-10" variant="primary" type="submit" disabled={isUploading}>Upload</Button>
                             </Form>
                             {isUploading && <p>Uploading...</p>}
                             {progress && (
                                 <ProgressBar now={progress} label={`${progress}%`} visuallyHidden />
                             )}
-                            {(totalTime > 0) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
+                            {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
+                            {errorMsg && (<div className="mt-5"><Alert key="danger" variant="danger"> {errorMsg} </Alert></div>)}
+                            {/* {errorMsg} */}
                         </div>
                     </div>
                 </div>

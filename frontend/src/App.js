@@ -8,7 +8,7 @@ function App() {
     <Router>
       <Routes>
         <Route 
-          path="/upload"
+          path="/"
           element={<UploadFile />}
         />
       </Routes>
