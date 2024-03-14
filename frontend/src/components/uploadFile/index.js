@@ -10,9 +10,13 @@ const FileUpload = () => {
     const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef();
     const [progress, setProgress] = useState(null);
+    const [startTime, setStartTime] = useState(null);
+    const [endTime, setEndTime] = useState(null);
+
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
     };
+    let totalTime = endTime && startTime ? endTime - startTime : null;
 
     const handleUpload = (e) => {
         e.preventDefault();
@@ -21,6 +25,9 @@ const FileUpload = () => {
             alert("Please select a file to upload.");
             return;
         }
+
+        totalTime = null;
+        setStartTime(Date.now());
 
         const reader = new FileReader();
         reader.readAsArrayBuffer(selectedFile);
@@ -52,6 +59,7 @@ const FileUpload = () => {
 
     useEffect(() => {
         socket.on('file:upload:finished', () => {
+            setEndTime(Date.now());
             setSelectedFile(null);
             setIsUploading(false);
             setProgress(null);
@@ -71,7 +79,7 @@ const FileUpload = () => {
     return (
         <div className="container mt-5">
             <div className="row justify-content-center">
-                <div className="col-6">
+                <div className="col-8">
                     <div className="card text-center">
                         <div className="card-body">
                             <h5 className="card-title">Upload a File</h5>
@@ -86,6 +94,7 @@ const FileUpload = () => {
                             {progress && (
                                 <ProgressBar now={progress} label={`${progress}%`} visuallyHidden />
                             )}
+                            {(totalTime > 0) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
                         </div>
                     </div>
                 </div>
