@@ -4,11 +4,15 @@
   "description": "Use socket.io ideally for large file transfers.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"cd frontend && npm start\" \"cd backend && npm start\""
   },
   "author": "Vasudeo Gaichor",
   "license": "ISC",
   "dependencies": {
     "util": "^0.12.5"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
