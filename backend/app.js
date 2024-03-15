@@ -7,6 +7,7 @@ const server = restify.createServer();
 const io = socketIo(server.server, {
     cors: {
         origin: "http://192.168.0.20:8503"
+        // origin: "https://eea3-103-184-155-125.ngrok-free.app"
     },
     maxHttpBufferSize: 1024 * 1024,
 });
@@ -74,7 +75,7 @@ io.on('connection', (socket) => {
 
     socket.on('file:delete', async ({ name }) => {
         const filePath = __dirname + '/uploads/' + name;
-    
+
         fs.access(filePath, fs.constants.F_OK, async (err) => {
             if (err) {
                 // File does not exist
@@ -87,6 +88,26 @@ io.on('connection', (socket) => {
                 } catch (err) {
                     socket.emit('file:delete:error', { message: 'Failed to delete file' });
                 }
+            }
+        });
+    });
+
+    socket.on('file:download:start', ({ name }) => {
+        const filePath = __dirname + '/uploads/' + name;
+        fs.access(filePath, fs.constants.F_OK, async (err) => {
+            if (err) {
+                socket.emit('file:download:error', { message: 'File not found' });
+            } else {
+                const readable = fs.createReadStream(filePath);
+
+                readable.on('data', (chunk) => {
+                    console.log('chunk - ', chunk)
+                    socket.emit('file:download:chunk', { data: chunk });
+                });
+                readable.on('end', () => {
+                    console.log('file download complete - ', name)
+                    socket.emit('file:download:end', { name });
+                });
             }
         });
     });
