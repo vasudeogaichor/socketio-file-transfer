@@ -116,7 +116,7 @@ const FileUpload = () => {
             <div className="row justify-content-center">
                 <div className="col-10">
                     <div className="card text-center">
-                        <div className="card-body">
+                        <div className="card-body h-235">
                             <h5 className="card-title">Upload a File</h5>
                             <Form onSubmit={handleUpload}>
                                 <Form.Group controlId="formFile" className="mb-3">
