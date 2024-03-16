@@ -1,16 +1,16 @@
 const restify = require('restify');
 const socketIo = require('socket.io');
 const fs = require('fs');
-const { Readable } = require('stream');
+const ss = require('socket.io-stream');
 
 const server = restify.createServer();
-
+const MAX_BUFFER_SIZE = 1024 * 1024 * 1024;
 const io = socketIo(server.server, {
     cors: {
         // origin: "http://192.168.0.20:8503"
-        origin: "https://ecaf-103-184-155-125.ngrok-free.app"
+        origin: "https://c8fd-103-184-155-125.ngrok-free.app"
     },
-    maxHttpBufferSize: 1024 * 1024,
+    maxHttpBufferSize: MAX_BUFFER_SIZE,
 });
 
 io.on('connection', (socket) => {
@@ -93,106 +93,54 @@ io.on('connection', (socket) => {
         });
     });
 
-    // socket.on('file:download:start', async ({ name }) => {
-    //     try {
-    //         const filePath = __dirname + '/uploads/' + name;
-    //         const stats = await fs.promises.stat(filePath);
-    //         const totalSize = stats.size;
-    //         const chunkSize = 1024 * 1024; // 1 MB
-    //         let bytesRead = 0;
-    
-    //         const readable = fs.createReadStream(filePath, { highWaterMark: chunkSize });
-    
-    //         readable.on('data', (chunk) => {
-    //             console.log('chunk - ', chunk)
-    //             bytesRead += chunk.length;
-    //             const progress = Math.round((bytesRead / totalSize) * 100);
-    //             socket.emit('file:download:chunk', { data: chunk, progress });
-    //         });
-    
-    //         readable.on('end', () => {
-    //             console.log('file download complete - ', name)
-    //             socket.emit('file:download:end', { name });
-    //         });
-    
-    //         readable.on('error', (error) => {
-    //             console.error('Error reading file:', error);
-    //             socket.emit('file:download:error', { message: error.message });
-    //         });
-    //     } catch (error) {
-    //         console.error('Error accessing file:', error);
-    //         socket.emit('file:download:error', { message: error.message });
-    //     }
-    // });
+    socket.on('file:download:start', ({ name }) => {
+        const filePath = __dirname + '/uploads/' + name;
+        const chunkSize = 64 * 1024; // 64 KB chunk size
 
-    // socket.on('file:download:start', async ({ name }) => {
-    //     try {
-    //         const filePath = __dirname + '/uploads/' + name;
-    //         const stats = await fs.promises.stat(filePath);
-    //         const totalSize = stats.size;
-    //         const chunkSize = 1024 * 1024; // 1 MB
-    //         let bytesRead = 0;
-    
-    //         const readable = fs.createReadStream(filePath, { highWaterMark: chunkSize });
-    
-    //         readable.on('data', async (chunk) => {
-    //             bytesRead += chunk.length;
-    //             const progress = Math.round((bytesRead / totalSize) * 100);
-    //             socket.emit('file:download:chunk', { data: chunk, progress });
-    //         });
-    
-    //         readable.on('end', async () => {
-    //             console.log('file download complete - ', name);
-    //             socket.emit('file:download:end', { name });
-    //         });
-    
-    //         readable.on('error', (error) => {
-    //             console.error('Error reading file:', error);
-    //             socket.emit('file:download:error', { message: error.message });
-    //         });
-    //     } catch (error) {
-    //         console.error('Error accessing file:', error);
-    //         socket.emit('file:download:error', { message: error.message });
-    //     }
-    // });
-    
-    socket.on('file:download:start', async ({ name }) => {
-        try {
-            const filePath = __dirname + '/uploads/' + name;
-            const stats = await fs.promises.stat(filePath);
-            const totalSize = stats.size;
-            const chunkSize = 1024 * 1024; // 1 MB
+        fs.stat(filePath, (err, stats) => {
+            if (err) {
+                console.log('err - ', err);
+                socket.emit('file:download:error', { message: 'Error in downloading file' });
+                return;
+            }
+
+            const fileSize = stats.size;
+            if (fileSize === 0) {
+                console.log('File is empty');
+                socket.emit('file:download:error', { message: 'File is empty' });
+                return;
+            }
+
             let bytesRead = 0;
-    
-            const readable = fs.createReadStream(filePath, { highWaterMark: chunkSize });
-    
-            const sendChunksWithDelay = async () => {
-                for await (const chunk of readable) {
-                    bytesRead += chunk.length;
-                    const progress = Math.round((bytesRead / totalSize) * 100);
-                    socket.emit('file:download:chunk', { data: chunk, progress });
-                    await new Promise(resolve => setTimeout(resolve, 100)); // Pause for 1 second (1000 ms)
-                }
-    
-                console.log('file download complete - ', name);
-                socket.emit('file:download:end', { name });
+
+            // Read the file in chunks
+            const readChunk = (start, end) => {
+                fs.readFile(filePath, { start, end }, (err, data) => {
+                    if (err) {
+                        console.error('Error reading chunk:', err);
+                        socket.emit('file:download:error', { message: 'Error reading file chunk' });
+                        return;
+                    }
+
+                    bytesRead += data.length;
+                    const progress = Math.ceil((bytesRead / fileSize) * 100);
+                    socket.emit('file:download:chunk', { data, progress });
+
+                    if (bytesRead < fileSize) {
+                        readChunk(bytesRead, Math.min(bytesRead + chunkSize, fileSize));
+                    } else {
+                        socket.emit('file:download:end');
+                        console.log('file has been read completely');
+                    }
+                });
             };
-    
-            sendChunksWithDelay();
-    
-            readable.on('error', (error) => {
-                console.error('Error reading file:', error);
-                socket.emit('file:download:error', { message: error.message });
-            });
-    
-        } catch (error) {
-            console.error('Error accessing file:', error);
-            socket.emit('file:download:error', { message: error.message });
-        }
+
+            readChunk(0, chunkSize);
+        });
     });
-    
-    
-    
+
+
+
 });
 
 // Start server
