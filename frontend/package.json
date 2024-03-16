@@ -15,6 +15,7 @@
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.7.4",
     "socket.io-stream": "^0.9.1",
+    "socketio-file-upload": "^0.7.3",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

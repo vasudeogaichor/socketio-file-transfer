@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Form, Button, Alert, ProgressBar } from 'react-bootstrap';
 import { socket } from "../../socket";
 import FilesTable from "./filesTable";
+let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
 const CHUNK_SIZE = 1024 * 1024;
 
@@ -22,35 +23,69 @@ const FileUpload = () => {
     };
 
     let totalTime = endTime && startTime ? endTime - startTime : null;
+    console.log('startTime - ', startTime)
+    console.log('endTime - ', endTime)
 
     const upload = async () => {
-        totalTime = null;
+        const uploadStream = stream.createStream();
+        const fileSize = selectedFile.size;
+        let uploadedBytes = 0;
+        stream(socket).emit('file:upload', uploadStream, { name: selectedFile.name });
         setStartTime(Date.now());
+        stream.createBlobReadStream(selectedFile)
+            .on('data', (chunk) => {
+                uploadedBytes += chunk.length;
+                const progressPercentage = Math.round((uploadedBytes / fileSize) * 100);
+                setProgress(progressPercentage);
+            })
+            .on('end', () => {
+                console.log('Upload complete');
+                setProgress(null);
+                setSelectedFile(null);
+                setEndTime(Date.now());
+              })
+            .pipe(uploadStream);
+        console.log('File uploaded');
 
-        let start = 0;
-        let end = Math.min(CHUNK_SIZE, selectedFile.size);
+        if (uploadedBytes === fileSize) setProgress(null);
+        // while (start < selectedFile.size) {
+        //     const chunk = selectedFile.slice(start, end);
 
-        setIsUploading(true);
+        //     // Emit the chunk to the server
+        //     socket.emit('file:upload', { content: chunk, name: selectedFile.name });
 
-        while (start < selectedFile.size) {
-            const chunk = selectedFile.slice(start, end);
+        //     // Calculate and emit progress
+        //     const progress = Math.round((end / selectedFile.size) * 100);
+        //     socket.emit('file:upload:progress', { name: selectedFile.name, progress });
 
-            // Emit the chunk to the server
-            socket.emit('file:upload', { content: chunk, name: selectedFile.name });
+        //     // Update start and end for the next chunk
+        //     start = end;
+        //     end = Math.min(start + CHUNK_SIZE, selectedFile.size);
 
-            // Calculate and emit progress
-            const progress = Math.round((end / selectedFile.size) * 100);
-            socket.emit('file:upload:progress', { name: selectedFile.name, progress });
+        //     // Optional - Add delay if needed to avoid overwhelming the server
+        //     await new Promise(resolve => setTimeout(resolve, 100));
+        // }
 
-            // Update start and end for the next chunk
-            start = end;
-            end = Math.min(start + CHUNK_SIZE, selectedFile.size);
+        // let uploader = new SocketIOFileUpload(socket);
 
-            // Optional - Add delay if needed to avoid overwhelming the server
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
+        // uploader.addEventListener('complete', (event) => {
+        //     console.log('File uploaded:', event.detail);
+        //   });
 
-        socket.emit('file:upload:finished');
+        //   uploader.addEventListener('error', (event) => {
+        //     console.error('Error uploading file:', event.detail);
+        //   });
+
+        //   uploader.addEventListener("progress", function(event){
+        //     var percent = event.bytesLoaded / event.file.size * 100;
+        //     console.log("File is", percent.toFixed(2), "percent loaded");
+        // });
+
+        //   uploader.dir = 'uploads/';
+
+        //   uploader.upload(selectedFile);
+
+        // socket.emit('file:upload:finished');
     };
 
     const handleUpload = (e) => {
@@ -61,7 +96,9 @@ const FileUpload = () => {
             return;
         }
 
-        socket.emit('file:upload:start', { name: selectedFile.name });
+        upload();
+
+        // socket.emit('file:upload:start', { name: selectedFile.name });
     };
 
     useEffect(() => {
@@ -86,9 +123,9 @@ const FileUpload = () => {
             setErrorMsg(data.message);
         });
 
-        socket.on('file:upload:start', () => {
-            upload();
-        });
+        // socket.on('file:upload:start', () => {
+        //     upload();
+        // });
 
         socket.on('file:list', (data) => {
             if (data?.error) {
@@ -129,7 +166,7 @@ const FileUpload = () => {
                             {(progress > 0) && (
                                 <div className=""><ProgressBar now={progress} label={`${progress}%`} visuallyHidden /></div>
                             )}
-                            {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds ({Math.ceil(totalTime / 60000)} minute(s))</p>}
+                            {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds (~ {Math.ceil(totalTime / 60000)} minute(s))</p>}
                             {(errorMsg?.length) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
                         </div>
                     </div>
