@@ -1,53 +1,57 @@
 const restify = require('restify');
 const socketIo = require('socket.io');
 const fs = require('fs');
-const ss = require('socket.io-stream');
+const ioStream = require('socket.io-stream');
 
 const server = restify.createServer();
-const MAX_BUFFER_SIZE = 1024 * 1024 * 1024;
+const MAX_BUFFER_SIZE = 1024 * 1024;
 const io = socketIo(server.server, {
     cors: {
-        // origin: "http://192.168.0.20:8503"
-        origin: "https://c8fd-103-184-155-125.ngrok-free.app"
+        origin: "http://192.168.0.20:8503"
+        // origin: "https://f129-103-184-155-125.ngrok-free.app"
     },
-    maxHttpBufferSize: MAX_BUFFER_SIZE,
+    // maxHttpBufferSize: MAX_BUFFER_SIZE,
 });
 
 io.on('connection', (socket) => {
     console.log('User connected.');
 
-    socket.on('file:upload:start', ({ name }) => {
-        const filePath = __dirname + '/uploads/' + name;
+    ioStream(socket).on('file:upload', (stream, data) => {
+        const filename = data.name;
+        const filePath = __dirname + '/uploads/' + filename;
+        const fileStream = fs.createWriteStream(filePath);
+        stream.pipe(fileStream);
+        console.log('File uploaded:', filename);
+      });
 
-        fs.exists(filePath, (exists) => {
-            if (exists) {
-                socket.emit('file:upload:error', { message: 'File with the same name already exists. Please rename your file.' });
-            } else {
-                socket.emit('file:upload:start')
-            }
-        });
-    });
+    // socket.on('file:upload', ({ content, name }) => {
+    //     const filePath = __dirname + '/uploads/' + name;
 
-    socket.on('file:upload', ({ content, name }) => {
-        const filePath = __dirname + '/uploads/' + name;
+    //     const writable = fs.createWriteStream(filePath, { flags: 'a' }); // 'a' flag to append to existing file
 
-        const writable = fs.createWriteStream(filePath, { flags: 'a' }); // 'a' flag to append to existing file
+    //     const fileBuffer = Buffer.from(content);
+    //     writable.write(fileBuffer);
 
-        const fileBuffer = Buffer.from(content);
-        writable.write(fileBuffer);
+    //     // writable.end(() => {
+    //     // });
+    // });
 
-        // writable.end(() => {
-        // });
-    });
+    // socket.on('file:upload:progress', (data) => {
+    //     const { progress } = data;
+    //     socket.emit('file:upload:progress', progress);
+    // });
 
-    socket.on('file:upload:progress', (data) => {
-        const { progress } = data;
-        socket.emit('file:upload:progress', progress);
-    });
+    // socket.on('file:upload:finished', () => {
+    //     socket.emit('file:upload:finished');
+    // });
 
-    socket.on('file:upload:finished', () => {
-        socket.emit('file:upload:finished');
-    });
+    ioStream(socket).on('file:download', (stream, data) => {
+        const filename = data.name;
+        const filePath = __dirname + '/uploads/' + filename;
+        const fileStream = fs.createReadStream(filePath);
+        stream.pipe(fileStream);
+        console.log('File sent:', filename);
+      });
 
     socket.on('file:list', () => {
         const uploadDir = __dirname + '/uploads/';
