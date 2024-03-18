@@ -8,6 +8,7 @@ const MAX_BUFFER_SIZE = 1024 * 1024;
 const io = socketIo(server.server, {
     cors: {
         origin: "http://192.168.0.20:8503"
+        // origin: "http://localhost:8503"
         // origin: "https://cruel-impalas-jog.loca.lt"
     },
     maxHttpBufferSize: MAX_BUFFER_SIZE,
@@ -27,13 +28,10 @@ io.on('connection', (socket) => {
         });
     });
 
-    ioStream(socket).on('file:download', (data) => {
+    ioStream(socket).on('file:download', (stream, data) => {
         const filename = data.name;
-        console.log('requesting file - ', filename)
         const filePath = __dirname + '/uploads/' + filename;
-        console.log('requesting path - ', filePath)
-        const stream = fs.createReadStream(filePath);
-        ioStream(socket).emit('file:download:stream', stream, { name: filename });
+        fs.createReadStream(filePath, { highWaterMark: MAX_BUFFER_SIZE }).pipe(stream);
     });
 
     socket.on('file:list', () => {
@@ -79,55 +77,6 @@ io.on('connection', (socket) => {
             }
         });
     });
-
-    socket.on('file:download:start', ({ name }) => {
-        const filePath = __dirname + '/uploads/' + name;
-        const chunkSize = 64 * 1024; // 64 KB chunk size
-
-        fs.stat(filePath, (err, stats) => {
-            if (err) {
-                console.log('err - ', err);
-                socket.emit('file:download:error', { message: 'Error in downloading file' });
-                return;
-            }
-
-            const fileSize = stats.size;
-            if (fileSize === 0) {
-                console.log('File is empty');
-                socket.emit('file:download:error', { message: 'File is empty' });
-                return;
-            }
-
-            let bytesRead = 0;
-
-            // Read the file in chunks
-            const readChunk = (start, end) => {
-                fs.readFile(filePath, { start, end }, (err, data) => {
-                    if (err) {
-                        console.error('Error reading chunk:', err);
-                        socket.emit('file:download:error', { message: 'Error reading file chunk' });
-                        return;
-                    }
-
-                    bytesRead += data.length;
-                    const progress = Math.ceil((bytesRead / fileSize) * 100);
-                    socket.emit('file:download:chunk', { data, progress });
-
-                    if (bytesRead < fileSize) {
-                        readChunk(bytesRead, Math.min(bytesRead + chunkSize, fileSize));
-                    } else {
-                        socket.emit('file:download:end');
-                        console.log('file has been read completely');
-                    }
-                });
-            };
-
-            readChunk(0, chunkSize);
-        });
-    });
-
-
-
 });
 
 // Start server
