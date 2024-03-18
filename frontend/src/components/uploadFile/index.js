@@ -23,8 +23,6 @@ const FileUpload = () => {
     };
 
     let totalTime = endTime && startTime ? endTime - startTime : null;
-    console.log('startTime - ', startTime)
-    console.log('endTime - ', endTime)
 
     const upload = async () => {
         const uploadStream = stream.createStream();
@@ -32,7 +30,7 @@ const FileUpload = () => {
         let uploadedBytes = 0;
         stream(socket).emit('file:upload', uploadStream, { name: selectedFile.name });
         setStartTime(Date.now());
-        stream.createBlobReadStream(selectedFile, { highWaterMark: CHUNK_SIZE })
+        stream.createBlobReadStream(selectedFile, /* { highWaterMark: CHUNK_SIZE } */)
             .on('data', (chunk) => {
                 console.log('chunk size - ', chunk.length)
                 uploadedBytes += chunk.length;
@@ -69,7 +67,7 @@ const FileUpload = () => {
     }, []);
 
     useEffect(() => {
-        socket.on('file:upload:finished', () => {
+        socket.on('file:upload:complete', () => {
             setEndTime(Date.now());
             setSelectedFile(null);
             setIsUploading(false);
@@ -127,7 +125,7 @@ const FileUpload = () => {
                             </Form>
                             {isUploading && <p>Uploading... Do not refresh the page.</p>}
                             {(progress > 0) && (
-                                <div className=""><ProgressBar now={progress} label={`${progress}%`} visuallyHidden /></div>
+                                <div className="m-5"><ProgressBar now={progress} label={`${progress}%`} visuallyHidden /></div>
                             )}
                             {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds (~ {Math.ceil(totalTime / 60000)} minute(s))</p>}
                             {(errorMsg?.length) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}

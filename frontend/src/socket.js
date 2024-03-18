@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 
 const URL = 'http://192.168.0.20:8504';
-// const URL = 'https://1812-103-184-155-125.ngrok-free.app';
+// const URL = 'https://two-moments-start.loca.lt';
 
 export const socket = io(URL, {
     autoConnect: true,
