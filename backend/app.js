@@ -10,7 +10,7 @@ const io = socketIo(server.server, {
         origin: "http://192.168.0.20:8503"
         // origin: "https://f129-103-184-155-125.ngrok-free.app"
     },
-    // maxHttpBufferSize: MAX_BUFFER_SIZE,
+    maxHttpBufferSize: MAX_BUFFER_SIZE,
 });
 
 io.on('connection', (socket) => {
@@ -19,7 +19,7 @@ io.on('connection', (socket) => {
     ioStream(socket).on('file:upload', (stream, data) => {
         const filename = data.name;
         const filePath = __dirname + '/uploads/' + filename;
-        const fileStream = fs.createWriteStream(filePath);
+        const fileStream = fs.createWriteStream(filePath, { highWaterMark: MAX_BUFFER_SIZE });
         stream.pipe(fileStream);
         console.log('File uploaded:', filename);
       });

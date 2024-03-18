@@ -32,8 +32,9 @@ const FileUpload = () => {
         let uploadedBytes = 0;
         stream(socket).emit('file:upload', uploadStream, { name: selectedFile.name });
         setStartTime(Date.now());
-        stream.createBlobReadStream(selectedFile)
+        stream.createBlobReadStream(selectedFile, { highWaterMark: CHUNK_SIZE })
             .on('data', (chunk) => {
+                console.log('chunk size - ', chunk.length)
                 uploadedBytes += chunk.length;
                 const progressPercentage = Math.round((uploadedBytes / fileSize) * 100);
                 setProgress(progressPercentage);
@@ -48,44 +49,6 @@ const FileUpload = () => {
         console.log('File uploaded');
 
         if (uploadedBytes === fileSize) setProgress(null);
-        // while (start < selectedFile.size) {
-        //     const chunk = selectedFile.slice(start, end);
-
-        //     // Emit the chunk to the server
-        //     socket.emit('file:upload', { content: chunk, name: selectedFile.name });
-
-        //     // Calculate and emit progress
-        //     const progress = Math.round((end / selectedFile.size) * 100);
-        //     socket.emit('file:upload:progress', { name: selectedFile.name, progress });
-
-        //     // Update start and end for the next chunk
-        //     start = end;
-        //     end = Math.min(start + CHUNK_SIZE, selectedFile.size);
-
-        //     // Optional - Add delay if needed to avoid overwhelming the server
-        //     await new Promise(resolve => setTimeout(resolve, 100));
-        // }
-
-        // let uploader = new SocketIOFileUpload(socket);
-
-        // uploader.addEventListener('complete', (event) => {
-        //     console.log('File uploaded:', event.detail);
-        //   });
-
-        //   uploader.addEventListener('error', (event) => {
-        //     console.error('Error uploading file:', event.detail);
-        //   });
-
-        //   uploader.addEventListener("progress", function(event){
-        //     var percent = event.bytesLoaded / event.file.size * 100;
-        //     console.log("File is", percent.toFixed(2), "percent loaded");
-        // });
-
-        //   uploader.dir = 'uploads/';
-
-        //   uploader.upload(selectedFile);
-
-        // socket.emit('file:upload:finished');
     };
 
     const handleUpload = (e) => {
