@@ -1,105 +1,50 @@
-import { useEffect, useState, useRef } from 'react';
+import { useState } from 'react';
 import { CircularProgressbar } from 'react-circular-progressbar';
+import streamSaver from 'streamsaver';
 import 'react-circular-progressbar/dist/styles.css';
 import { Table, Alert } from 'react-bootstrap';
-import streamSaver from 'streamsaver'
 import { socket } from '../../socket';
 let ss = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
 const FilesTable = ({ uploadedFiles: files }) => {
     const [errorMsg, setErrorMsg] = useState(null);
-    // const fileWriterRef = useRef(null);
     const [downloadingFile, setDownloadingFile] = useState(null);
     const [progress, setProgress] = useState(null);
-
+    console.log('progress - ', progress)
     const deleteFile = (file) => {
         socket.emit('file:delete', { name: file.name });
     };
 
-
     const downloadFile = async (file) => {
-        console.log('Downloading file:', file.name);
-        setDownloadingFile(file);
-        let writtenSize = 0;
-        let retries = 10; // Maximum number of retries
-        let checkInterval;
+        try {
+            let writtenSize = 0;
+            let totalFileSize = file.size * 1024;
+            const stream = ss.createStream();
+            const writableStream = streamSaver.createWriteStream(file.name);
+            const writer = writableStream.getWriter()
+            ss(socket).emit('file:download', stream, { name: file.name });
 
-        ss(socket).emit('file:download', { name: file.name });
-        // const stream = ss.createStream();
-        const fileStream = streamSaver.createWriteStream(file.name);
+            stream.on('data', (chunk) => {
+                writtenSize += chunk.length;
+                setProgress(Math.ceil((writtenSize/totalFileSize)*100));
+                writer.write(chunk);
+            });
 
-        ss(socket).on('file:download:stream', (stream, { name }) => {
-            console.log('stream - ', stream)
-            streamSaver.WritableStreamSaver.write(stream, fileStream);
-        });
+            stream.on('end', () => {
+                writer.close();
+                console.log('File downloaded successfully');
+                setDownloadingFile(null);
+            });
+
+            setDownloadingFile(file);
+
+        } catch (error) {
+            console.error('Error downloading file:', error);
+            setErrorMsg('Error downloading file');
+            setDownloadingFile(null);
+            setProgress(null);
+        }
     };
-
-
-    // const downloadFile = async (file) => {
-    //     try {
-    //         const handle = await window.showSaveFilePicker({
-    //             suggestedName: file.name,
-    //             types: [{
-    //                 description: 'Text Files',
-    //                 accept: {
-    //                     'text/plain': ['.txt'],
-    //                     'application/octet-stream': ['.bin']
-    //                 }
-    //             }]
-    //         });
-    
-    //         const writable = await handle.createWritable();
-    //         console.log('Downloading file:', file.name);
-    //         let writtenSize = 0;
-    //         let retries = 10; // Maximum number of retries
-    //         let checkInterval;
-    //         socket.emit('file:download:start', { name: file.name });
-            
-    //         socket.on('file:download:chunk', ({ data, progress }) => {
-    //             // console.log('progress - ', progress)
-    //             writable.write(data);
-    //             writtenSize += data.length;
-    //             setProgress(progress);
-    //         });
-
-    //         socket.on('file:download:end', () => {
-    //             setTimeout(() => {
-    //                 // setErrorMsg('File download error: File size mismatch');
-    //                 writable.close();
-    //                 setProgress(null);
-    //                 setDownloadingFile(null);
-    //             }, 5000);
-    //         });
-
-    //         socket.on('file:download:error', ({ message }) => {
-    //             console.error('File download error:', message);
-    //             setErrorMsg(message);
-    //             cleanup();
-    //         });
-
-    //         setDownloadingFile(file);
-
-    //         function cleanup() {
-    //             writable.abort().then(() => {
-    //                 console.log('Writer closed');
-    //                 // Delete the file
-    //                 handle.removeEntry();
-    //                 console.log('Incompletely downloaded file deleted');
-    //                 setProgress(null);
-    //                 setDownloadingFile(null);
-    //             }).catch((err) => {
-    //                 console.error('Error cleaning up:', err);
-    //             });
-    //         }
-    //     } catch (error) {
-    //         console.error('Error downloading file:', error);
-    //         setErrorMsg('Error downloading file');
-    //         setDownloadingFile(null);
-    //         setProgress(null);
-    //     }
-    // };
-
-    
 
     return (
         <div>
