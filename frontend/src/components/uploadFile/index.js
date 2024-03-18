@@ -4,8 +4,6 @@ import { socket } from "../../socket";
 import FilesTable from "./filesTable";
 let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
-const CHUNK_SIZE = 1024 * 1024;
-
 const FileUpload = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(null);
@@ -32,7 +30,6 @@ const FileUpload = () => {
         setStartTime(Date.now());
         stream.createBlobReadStream(selectedFile, /* { highWaterMark: CHUNK_SIZE } */)
             .on('data', (chunk) => {
-                console.log('chunk size - ', chunk.length)
                 uploadedBytes += chunk.length;
                 const progressPercentage = Math.round((uploadedBytes / fileSize) * 100);
                 setProgress(progressPercentage);

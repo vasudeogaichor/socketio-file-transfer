@@ -10,7 +10,6 @@ const FilesTable = ({ uploadedFiles: files }) => {
     const [errorMsg, setErrorMsg] = useState(null);
     const [downloadingFile, setDownloadingFile] = useState(null);
     const [progress, setProgress] = useState(null);
-    console.log('progress - ', progress)
     const deleteFile = (file) => {
         socket.emit('file:delete', { name: file.name });
     };
