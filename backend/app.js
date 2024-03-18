@@ -8,7 +8,7 @@ const MAX_BUFFER_SIZE = 1024 * 1024;
 const io = socketIo(server.server, {
     cors: {
         origin: "http://192.168.0.20:8503"
-        // origin: "https://f129-103-184-155-125.ngrok-free.app"
+        // origin: "https://cruel-impalas-jog.loca.lt"
     },
     maxHttpBufferSize: MAX_BUFFER_SIZE,
 });
@@ -21,37 +21,20 @@ io.on('connection', (socket) => {
         const filePath = __dirname + '/uploads/' + filename;
         const fileStream = fs.createWriteStream(filePath, { highWaterMark: MAX_BUFFER_SIZE });
         stream.pipe(fileStream);
-        console.log('File uploaded:', filename);
-      });
+        stream.on('end', () => {
+            console.log('File uploaded:', filename);
+            socket.emit('file:upload:complete');
+        });
+    });
 
-    // socket.on('file:upload', ({ content, name }) => {
-    //     const filePath = __dirname + '/uploads/' + name;
-
-    //     const writable = fs.createWriteStream(filePath, { flags: 'a' }); // 'a' flag to append to existing file
-
-    //     const fileBuffer = Buffer.from(content);
-    //     writable.write(fileBuffer);
-
-    //     // writable.end(() => {
-    //     // });
-    // });
-
-    // socket.on('file:upload:progress', (data) => {
-    //     const { progress } = data;
-    //     socket.emit('file:upload:progress', progress);
-    // });
-
-    // socket.on('file:upload:finished', () => {
-    //     socket.emit('file:upload:finished');
-    // });
-
-    ioStream(socket).on('file:download', (stream, data) => {
+    ioStream(socket).on('file:download', (data) => {
         const filename = data.name;
+        console.log('requesting file - ', filename)
         const filePath = __dirname + '/uploads/' + filename;
-        const fileStream = fs.createReadStream(filePath);
-        stream.pipe(fileStream);
-        console.log('File sent:', filename);
-      });
+        console.log('requesting path - ', filePath)
+        const stream = fs.createReadStream(filePath);
+        ioStream(socket).emit('file:download:stream', stream, { name: filename });
+    });
 
     socket.on('file:list', () => {
         const uploadDir = __dirname + '/uploads/';
