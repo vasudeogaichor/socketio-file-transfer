@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Form, Button, Alert, ProgressBar } from 'react-bootstrap';
 import { socket } from "../../socket";
 import FilesTable from "./filesTable";
+import FileInput from "./fileInput";
 let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
 const FileUpload = () => {
@@ -28,7 +28,7 @@ const FileUpload = () => {
         let uploadedBytes = 0;
         stream(socket).emit('file:upload', uploadStream, { name: selectedFile.name });
         setStartTime(Date.now());
-        stream.createBlobReadStream(selectedFile, /* { highWaterMark: CHUNK_SIZE } */)
+        stream.createBlobReadStream(selectedFile)
             .on('data', (chunk) => {
                 uploadedBytes += chunk.length;
                 const progressPercentage = Math.round((uploadedBytes / fileSize) * 100);
@@ -38,10 +38,9 @@ const FileUpload = () => {
                 console.log('Upload complete');
                 setProgress(null);
                 setSelectedFile(null);
-                setEndTime(Date.now());
-              })
+                setIsUploading(false);
+            })
             .pipe(uploadStream);
-        console.log('File uploaded');
 
         if (uploadedBytes === fileSize) setProgress(null);
     };
@@ -55,8 +54,6 @@ const FileUpload = () => {
         }
 
         upload();
-
-        // socket.emit('file:upload:start', { name: selectedFile.name });
     };
 
     useEffect(() => {
@@ -66,23 +63,12 @@ const FileUpload = () => {
     useEffect(() => {
         socket.on('file:upload:complete', () => {
             setEndTime(Date.now());
-            setSelectedFile(null);
-            setIsUploading(false);
-            setProgress(null);
             fileInputRef.current.value = '';
             socket.emit('file:list');
         });
 
-        socket.on('file:upload:progress', (data) => {
-            setProgress(data);
-        });
-
-        socket.on('file:upload:error', (data) => {
-            setErrorMsg(data.message);
-        });
-
-        // socket.on('file:upload:start', () => {
-        //     upload();
+        // socket.on('file:upload:error', (data) => {
+        //     setErrorMsg(data.message);
         // });
 
         socket.on('file:list', (data) => {
@@ -97,10 +83,8 @@ const FileUpload = () => {
         });
 
         return () => {
-            socket.off('file:upload:finished');
-            socket.off('file:upload:progress');
-            socket.off('file:upload:error');
-            socket.off('file:upload:start');
+            socket.off('file:upload:complete');
+            // socket.off('file:upload:error');
             socket.off('file:list');
             socket.off('file:delete:success');
         };
@@ -108,28 +92,15 @@ const FileUpload = () => {
 
     return (
         <div className="container mt-5">
-            <div className="row justify-content-center">
-                <div className="col-10">
-                    <div className="card text-center">
-                        <div className="card-body h-235">
-                            <h5 className="card-title">Upload a File</h5>
-                            <Form onSubmit={handleUpload}>
-                                <Form.Group controlId="formFile" className="mb-3">
-                                    <Form.Label>Select file to upload</Form.Label>
-                                    <Form.Control ref={fileInputRef} type="file" onChange={handleFileChange} disabled={isUploading} />
-                                </Form.Group>
-                                <Button className="mb-10" variant="primary" type="submit" disabled={isUploading}>Upload</Button>
-                            </Form>
-                            {isUploading && <p>Uploading... Do not refresh the page.</p>}
-                            {(progress > 0) && (
-                                <div className="m-5"><ProgressBar now={progress} label={`${progress}%`} visuallyHidden /></div>
-                            )}
-                            {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds (~ {Math.ceil(totalTime / 60000)} minute(s))</p>}
-                            {(errorMsg?.length) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <FileInput
+                  handleUpload={handleUpload}
+                  fileInputRef={fileInputRef}
+                  handleFileChange={handleFileChange}
+                  isUploading={isUploading}
+                  progress={progress}
+                  totalTime={totalTime}
+                  errorMsg={errorMsg}
+                />
             <div className="row justify-content-center mt-5">
                 <div className="col-10">
                     <FilesTable uploadedFiles={uploadedFiles} />
