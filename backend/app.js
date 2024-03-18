@@ -1,7 +1,6 @@
 const restify = require('restify');
 const socketIo = require('socket.io');
 const fs = require('fs');
-const ss = require('socket.io-stream');
 
 const server = restify.createServer();
 const MAX_BUFFER_SIZE = 1024 * 1024 * 1024;
