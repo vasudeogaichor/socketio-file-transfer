@@ -18,7 +18,7 @@ const FileInput = ({
                                 <Form.Label>Select file to upload</Form.Label>
                                 <Form.Control ref={fileInputRef} multiple type="file" onChange={handleFileChange} disabled={isUploading} />
                             </Form.Group>
-                            <Button className="mb-10" variant="primary" type="submit" disabled={isUploading}>Upload</Button>
+                            <Button className="mb-10 btn-dark" variant="primary" type="submit" disabled={isUploading}>Upload</Button>
                         </Form>
                         {isUploading && <p>Uploading... Do not refresh the page.</p>}
                         {(errorMsg?.length) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
