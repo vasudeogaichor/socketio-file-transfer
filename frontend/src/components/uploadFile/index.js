@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { socket } from "../../socket";
 import FilesTable from "./filesTable";
 import FileInput from "./fileInput";
+import ProgressBarToast from "./progressBarToast";
 let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
 const FileUpload = () => {
@@ -13,7 +14,6 @@ const FileUpload = () => {
     const [endTime, setEndTime] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [uploadedFiles, setUploadedFiles] = useState(null);
-
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
         if (errorMsg) setErrorMsg(null);
@@ -23,6 +23,7 @@ const FileUpload = () => {
     let totalTime = endTime && startTime ? endTime - startTime : null;
 
     const upload = async () => {
+        setIsUploading(true);
         const uploadStream = stream.createStream();
         const fileSize = selectedFile.size;
         let uploadedBytes = 0;
@@ -97,7 +98,6 @@ const FileUpload = () => {
                   fileInputRef={fileInputRef}
                   handleFileChange={handleFileChange}
                   isUploading={isUploading}
-                  progress={progress}
                   totalTime={totalTime}
                   errorMsg={errorMsg}
                 />
@@ -106,6 +106,7 @@ const FileUpload = () => {
                     <FilesTable uploadedFiles={uploadedFiles} />
                 </div>
             </div>
+            <ProgressBarToast isUploading={isUploading} progress={progress} />
         </div>
     );
 };
