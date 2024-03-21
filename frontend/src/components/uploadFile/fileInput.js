@@ -1,4 +1,4 @@
-import { Form, Button, Alert, ProgressBar } from 'react-bootstrap';
+import { Form, Button, Alert } from 'react-bootstrap';
 
 const FileInput = ({
     handleUpload,

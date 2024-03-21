@@ -9,8 +9,8 @@ const ProgressBarToast = ({ isUploading, progress }) => {
         if (isUploading) {
             const newToastId = toast.info(
                 <div>
-                    <div className='fs-6'>Uploading...</div>
-                    <progress value={progress} max={100} />
+                    <div>Uploading...</div>
+                        <progress value={progress} max={100} />
                     <div>{`${progress}%`}</div>
                 </div>,
                 {
