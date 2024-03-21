@@ -4,7 +4,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { socket } from "../../socket";
 import FilesTable from "./filesTable";
 import FileInput from "./fileInput";
-import ProgressBarToast from "./progressBarToast";
 let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
 class FileUploader {
@@ -21,7 +20,7 @@ class FileUploader {
         this.isUploading = true;
         this.toastId = toast.info(
             <div>
-                <div>Uploading {this.file.name}...</div>
+                <div>Uploading {this.file.name}</div>
                 <progress value={this.progress} max={100} />
                 <div>{this.progress}%</div>
             </div>,
@@ -44,7 +43,7 @@ class FileUploader {
                 toast.update(this.toastId, {
                     render: (
                         <div>
-                            <div>Uploading {this.file.name}...</div>
+                            <div>Uploading {this.file.name}</div>
                             <progress value={this.progress} max={100} />
                             <div>{this.progress}%</div>
                         </div>
@@ -61,7 +60,6 @@ class FileUploader {
 
 const FileUpload = () => {
     const [selectedFiles, setSelectedFiles] = useState([]);
-    const [uploaders, setUploaders] = useState([]);
     const fileInputRef = useRef();
     const [uploadedFiles, setUploadedFiles] = useState(null);
 
@@ -76,7 +74,6 @@ const FileUpload = () => {
         selectedFiles.forEach((file) => {
             const uploader = new FileUploader(file);
             uploader.startUpload();
-            setUploaders((prevUploaders) => [...prevUploaders, uploader]);
         });
         
         setSelectedFiles([]);
