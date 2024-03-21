@@ -71,7 +71,7 @@ const FilesTable = ({ uploadedFiles: files }) => {
 
     return (
         <div>
-            <Table hover bordered>
+            <Table hover bordered className='align-middle'>
                 <thead>
                     <tr>
                         <th colSpan={5}>
@@ -79,7 +79,7 @@ const FilesTable = ({ uploadedFiles: files }) => {
                         </th>
 
                     </tr>
-                    <tr>
+                    <tr className='text-center'>
                         <th>File Name</th>
                         <th>Created At</th>
                         <th colSpan={3}>Size (kB)</th>
