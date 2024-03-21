@@ -6,11 +6,12 @@ const ProgressBarToast = ({ isUploading, progress }) => {
     const [toastId, setToastId] = useState(null);
 
     useEffect(() => {
+        let newToastId = null;
         if (isUploading) {
             const newToastId = toast.info(
                 <div>
                     <div>Uploading...</div>
-                        <progress value={progress} max={100} />
+                    <progress value={progress} max={100} />
                     <div>{`${progress}%`}</div>
                 </div>,
                 {
@@ -24,29 +25,17 @@ const ProgressBarToast = ({ isUploading, progress }) => {
                 }
             );
             setToastId(newToastId);
-
-            const interval = setInterval(() => {
-                if (progress < 100) {
-                    toast.update(newToastId, {
-                        render: (
-                          <div>
-                            <div>Uploading...</div>
-                            <progress value={progress} max={100} />
-                            <div>{`${progress}%`}</div>
-                          </div>
-                        ),
-                      });
-                } else {
-                    clearInterval(interval);
-                }
-            }, 50);
-
-            return () => clearInterval(interval);
         } else {
             if (toastId !== null) {
-                toast.dismiss(toastId);
-                setToastId(null);
+                if (toastId !== null) {
+                    dismissToast();
+                }
             }
+        }
+
+        function dismissToast() {
+            toast.dismiss(newToastId);
+            setToastId(null);
         }
     }, [isUploading, progress, toastId]);
 

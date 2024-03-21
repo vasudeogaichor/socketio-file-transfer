@@ -1,60 +1,86 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { socket } from "../../socket";
 import FilesTable from "./filesTable";
 import FileInput from "./fileInput";
 import ProgressBarToast from "./progressBarToast";
 let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
-const FileUpload = () => {
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(null);
-    const fileInputRef = useRef();
-    const [progress, setProgress] = useState(null);
-    const [startTime, setStartTime] = useState(null);
-    const [endTime, setEndTime] = useState(null);
-    const [errorMsg, setErrorMsg] = useState(null);
-    const [uploadedFiles, setUploadedFiles] = useState(null);
-    const handleFileChange = (e) => {
-        setSelectedFile(e.target.files[0]);
-        if (errorMsg) setErrorMsg(null);
-        setStartTime(null);
-    };
+class FileUploader {
+    constructor(file) {
+        this.file = file;
+        this.uploadStream = stream.createStream();
+        this.fileSize = file.size;
+        this.uploadedBytes = 0;
+        this.progress = 0;
+        this.isUploading = false;
+    }
 
-    let totalTime = endTime && startTime ? endTime - startTime : null;
+    startUpload() {
+        this.isUploading = true;
+        this.toastId = toast.info(
+            <div>
+                <div>Uploading {this.file.name}...</div>
+                <progress value={this.progress} max={100} />
+                <div>{this.progress}%</div>
+            </div>,
+            {
+                autoClose: false,
+                closeButton: false,
+                closeOnClick: false,
+                draggable: false,
+                pauseOnHover: false,
+                position: "bottom-right",
+                toastId: this.toastId
+            }
+        );
 
-    const upload = async () => {
-        setIsUploading(true);
-        const uploadStream = stream.createStream();
-        const fileSize = selectedFile.size;
-        let uploadedBytes = 0;
-        stream(socket).emit('file:upload', uploadStream, { name: selectedFile.name });
-        setStartTime(Date.now());
-        stream.createBlobReadStream(selectedFile)
+        stream(socket).emit('file:upload', this.uploadStream, { name: this.file.name });
+        stream.createBlobReadStream(this.file)
             .on('data', (chunk) => {
-                uploadedBytes += chunk.length;
-                const progressPercentage = Math.round((uploadedBytes / fileSize) * 100);
-                setProgress(progressPercentage);
+                this.uploadedBytes += chunk.length;
+                this.progress = Math.round((this.uploadedBytes / this.fileSize) * 100);
+                toast.update(this.toastId, {
+                    render: (
+                        <div>
+                            <div>Uploading {this.file.name}...</div>
+                            <progress value={this.progress} max={100} />
+                            <div>{this.progress}%</div>
+                        </div>
+                    )
+                });
             })
             .on('end', () => {
-                console.log('Upload complete');
-                setProgress(null);
-                setSelectedFile(null);
-                setIsUploading(false);
+                this.isUploading = false;
+                toast.dismiss(this.toastId);
             })
-            .pipe(uploadStream);
+            .pipe(this.uploadStream);
+    }
+}
 
-        if (uploadedBytes === fileSize) setProgress(null);
+const FileUpload = () => {
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [uploaders, setUploaders] = useState([]);
+    const fileInputRef = useRef();
+    const [uploadedFiles, setUploadedFiles] = useState(null);
+
+    const handleFileChange = (e) => {
+        const files = Array.from(e.target.files);
+        setSelectedFiles([...selectedFiles, ...files]);
     };
 
     const handleUpload = (e) => {
         e.preventDefault();
 
-        if (!selectedFile) {
-            alert("Please select a file to upload.");
-            return;
-        }
-
-        upload();
+        selectedFiles.forEach((file) => {
+            const uploader = new FileUploader(file);
+            uploader.startUpload();
+            setUploaders((prevUploaders) => [...prevUploaders, uploader]);
+        });
+        
+        setSelectedFiles([]);
+        fileInputRef.current.value = '';
     };
 
     useEffect(() => {
@@ -63,19 +89,10 @@ const FileUpload = () => {
 
     useEffect(() => {
         socket.on('file:upload:complete', () => {
-            setEndTime(Date.now());
-            fileInputRef.current.value = '';
             socket.emit('file:list');
         });
 
-        // socket.on('file:upload:error', (data) => {
-        //     setErrorMsg(data.message);
-        // });
-
         socket.on('file:list', (data) => {
-            if (data?.error) {
-                setErrorMsg(data.error)
-            }
             setUploadedFiles(data.data)
         });
 
@@ -85,7 +102,6 @@ const FileUpload = () => {
 
         return () => {
             socket.off('file:upload:complete');
-            // socket.off('file:upload:error');
             socket.off('file:list');
             socket.off('file:delete:success');
         };
@@ -94,19 +110,16 @@ const FileUpload = () => {
     return (
         <div className="container mt-5">
             <FileInput
-                  handleUpload={handleUpload}
-                  fileInputRef={fileInputRef}
-                  handleFileChange={handleFileChange}
-                  isUploading={isUploading}
-                  totalTime={totalTime}
-                  errorMsg={errorMsg}
-                />
+                handleUpload={handleUpload}
+                fileInputRef={fileInputRef}
+                handleFileChange={handleFileChange}
+            />
             <div className="row justify-content-center mt-5">
                 <div className="col-10">
                     <FilesTable uploadedFiles={uploadedFiles} />
                 </div>
             </div>
-            <ProgressBarToast isUploading={isUploading} progress={progress} />
+            <ToastContainer /> 
         </div>
     );
 };
