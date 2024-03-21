@@ -5,7 +5,6 @@ const FileInput = ({
     fileInputRef,
     handleFileChange,
     isUploading,
-    totalTime,
     errorMsg
 }) => {
     return (
@@ -17,12 +16,11 @@ const FileInput = ({
                         <Form onSubmit={handleUpload}>
                             <Form.Group controlId="formFile" className="mb-3">
                                 <Form.Label>Select file to upload</Form.Label>
-                                <Form.Control ref={fileInputRef} type="file" onChange={handleFileChange} disabled={isUploading} />
+                                <Form.Control ref={fileInputRef} multiple type="file" onChange={handleFileChange} disabled={isUploading} />
                             </Form.Group>
                             <Button className="mb-10" variant="primary" type="submit" disabled={isUploading}>Upload</Button>
                         </Form>
                         {isUploading && <p>Uploading... Do not refresh the page.</p>}
-                        {(totalTime > 0 && !errorMsg) && <p>Total time taken: {totalTime} milliseconds (~ {Math.ceil(totalTime / 60000)} minute(s))</p>}
                         {(errorMsg?.length) && (<div className="mt-5"><Alert key="danger" dismissible variant="danger"> {errorMsg} </Alert></div>)}
                     </div>
                 </div>
