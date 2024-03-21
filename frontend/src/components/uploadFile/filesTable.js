@@ -8,42 +8,64 @@ import { ReactComponent as TrashIcon } from "../../assets/icons/trash.svg";
 import { ReactComponent as DownloadIcon } from "../../assets/icons/download.svg";
 let ss = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
+class FileDownloader {
+    constructor(file, setDownloadingFiles) {
+        this.file = file;
+        this.progress = 0;
+        this.setDownloadingFiles = setDownloadingFiles;
+    }
+
+    startDownload() {
+        let writtenSize = 0;
+        let totalFileSize = this.file.size * 1024;
+        const stream = ss.createStream();
+        const writableStream = streamSaver.createWriteStream(this.file.name);
+        const writer = writableStream.getWriter()
+        ss(socket).emit('file:download', stream, { name: this.file.name });
+
+        stream.on('data', (chunk) => {
+            writtenSize += chunk.length;
+            const progress = Math.ceil((writtenSize / totalFileSize) * 100);
+            if (progress !== this.progress) {
+                this.progress = progress;
+                this.setDownloadingFiles((prevFiles) => {
+                    const updatedFiles = prevFiles.map(prevFile => {
+                        if (prevFile.file.name === this.file.name) {
+                            return { ...prevFile, progress };
+                        }
+                        return prevFile;
+                    });
+                    return updatedFiles;
+                });
+            }
+            writer.write(chunk);
+        });
+
+        stream.on('end', () => {
+            writer.close();
+            console.log('File downloaded successfully');
+            setTimeout(() => {
+                this.setDownloadingFiles((prevFiles) => prevFiles.filter(prevFile => prevFile.file.name !== this.file.name));
+            }, 1000)
+        });
+    }
+}
+
 const FilesTable = ({ uploadedFiles: files }) => {
     const [errorMsg, setErrorMsg] = useState(null);
-    const [downloadingFile, setDownloadingFile] = useState(null);
-    const [progress, setProgress] = useState(null);
+    const [downloadingFiles, setDownloadingFiles] = useState([]);
     const deleteFile = (file) => {
         socket.emit('file:delete', { name: file.name });
     };
 
-    const downloadFile = async (file) => {
+    const downloadFile = (file) => {
         try {
-            let writtenSize = 0;
-            let totalFileSize = file.size * 1024;
-            const stream = ss.createStream();
-            const writableStream = streamSaver.createWriteStream(file.name);
-            const writer = writableStream.getWriter()
-            ss(socket).emit('file:download', stream, { name: file.name });
-
-            stream.on('data', (chunk) => {
-                writtenSize += chunk.length;
-                setProgress(Math.ceil((writtenSize / totalFileSize) * 100));
-                writer.write(chunk);
-            });
-
-            stream.on('end', () => {
-                writer.close();
-                console.log('File downloaded successfully');
-                setDownloadingFile(null);
-            });
-
-            setDownloadingFile(file);
-
+            const downloader = new FileDownloader(file, setDownloadingFiles);
+            downloader.startDownload();
+            setDownloadingFiles((prevFiles) => [...prevFiles, downloader]);
         } catch (error) {
             console.error('Error downloading file:', error);
             setErrorMsg('Error downloading file');
-            setDownloadingFile(null);
-            setProgress(null);
         }
     };
 
@@ -75,9 +97,9 @@ const FilesTable = ({ uploadedFiles: files }) => {
                                 </div>
                             </td>
                             <td>
-                                {(downloadingFile && downloadingFile.name === file.name) ? (
+                                {(downloadingFiles.some(downloader => downloader.file.name === file.name)) ? (
                                     <div style={{ width: 20, height: 20 }}>
-                                        <CircularProgressbar value={progress} />
+                                        <CircularProgressbar value={downloadingFiles.find(downloader => downloader.file.name === file.name).progress} />
                                     </div>
                                 ) : (
                                     <div role="button" onClick={() => downloadFile(file)}>
