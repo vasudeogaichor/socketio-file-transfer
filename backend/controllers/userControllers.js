@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
-const { validateEmail, validatePassword } = require('../helpers');
+const { validateEmail, validatePassword, createToken } = require('../helpers');
 
 module.exports = {
     signupUser: async (username, email, password, callback) => {
@@ -20,7 +20,9 @@ module.exports = {
             const hashedPassword = await bcrypt.hash(password, 10);
             const user = new User({ email, username, password: hashedPassword });
             await user.save();
-            callback(true, user);
+            const newToken = createToken(user);
+            const data = {token: newToken, _id: user._id, email, username };
+            callback(true, data);
         } catch (error) {
             callback(false, error);
         }
@@ -36,7 +38,9 @@ module.exports = {
 
             const loginSuccess = await bcrypt.compare(password, user.password);
             if (loginSuccess) {
-                callback(true, { message: 'Login successful', data: user });
+                const newToken = createToken(user);
+                const data = {token: newToken, _id: user._id, email: user.email, username: user.username };
+                callback(true, { message: 'Login successful', data });
                 return;
             } else {
                 callback(false, { message: 'Username/Password mismatch' });

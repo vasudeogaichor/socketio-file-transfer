@@ -1,4 +1,6 @@
 const passwordValidator = require('password-validator');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = "6fc5825be51c7154873188b54df06bccf08d1da8fc91e368b9e7802105d7814afd2d744c9a4cac20b59f55c3934ea9aecb1dda852f7ecb4532eb8b25d9e77bba";
 
 function validateEmail(email) {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,7 +43,27 @@ function validatePassword(password) {
     }
 }
 
+function createToken({username, _id}) {
+    return jwt.sign({ username, _id }, JWT_SECRET, {
+        expiresIn: '24h' // Token expiration time
+    });
+}
+
+function verifyToken(token) {
+    return new Promise((resolve, reject) => {
+        jwt.verify(token, JWT_SECRET, (err, decoded) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(decoded);
+            }
+        });
+    });
+}
+
+
 module.exports = {
     validateEmail,
-    validatePassword
+    validatePassword,
+    createToken
 }
