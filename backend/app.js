@@ -1,6 +1,7 @@
 const restify = require('restify');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
+const corsMiddleware = require('restify-cors-middleware2')
 const errorHandler = require('./errorHandler');
 const { handleFileUpload, handleFileDownload, handleFileList, handleFileDelete } = require('./socketHandlers');
 const MAX_BUFFER_SIZE = 1024 * 1024;
@@ -15,6 +16,15 @@ mongoose.connect('mongodb://localhost:27017/filemanagement')
   });
   
 const server = restify.createServer();
+
+const cors = corsMiddleware({
+  origins: ['*'],
+  allowHeaders: ['API-Token'],
+  exposeHeaders: ['API-Token-Expiry']
+})
+
+server.pre(cors.preflight)
+server.use(cors.actual)
 
 const io = socketIo(server.server, {
     cors: {
@@ -36,7 +46,7 @@ io.on('connection', (socket) => {
     handleFileDelete(socket);
 });
 
-server.on('restifyError', errorHandler);
+// server.on('restifyError', errorHandler(req, res));
 
 // Start server
 const PORT = 8504;
