@@ -12,7 +12,7 @@ const CustomAlert = ({ alertInfo, setAlertInfo }) => {
             setIsVisible(false);
             setAlertInfo({});
             // onClose(); // Optional: Call a function to handle alert dismissal
-          }, 2000);
+          }, 5000);
     
           return () => clearTimeout(timer);
         }
@@ -20,13 +20,18 @@ const CustomAlert = ({ alertInfo, setAlertInfo }) => {
     
       if (!isVisible) {
         return null;
-      }
+    }
 
-  return (
-    <Alert className="my-4" variant={type}>
-      {message}
-    </Alert>
-  );
+    return (
+        <Alert className="my-4" variant={type}>
+            {message.split('\n')?.map((line, index) => (
+                <React.Fragment key={index}>
+                    {line}
+                    <br />
+                </React.Fragment>
+            ))}
+        </Alert>
+    );
 };
 
 export default CustomAlert;

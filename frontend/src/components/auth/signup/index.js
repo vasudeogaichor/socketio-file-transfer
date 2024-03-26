@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
+import {useNavigate} from 'react-router-dom';
+import { Form, Button } from "react-bootstrap";
 import { signupUser } from "../../../apis";
 import CustomAlert from "../../../ui/customerAlert";
 import BackgroundImage from "../../../assets/images/background.png";
 import "./signup.css";
+import { setCookie } from "../../../helpers";
 
 const SignUp = () => {
   const [inputUsername, setInputUsername] = useState("");
@@ -11,6 +13,7 @@ const SignUp = () => {
   const [inputPassword, setInputPassword] = useState("");
   const [inputConfirmPassword, setInputConfirmPassword] = useState("");
   const [alertInfo, setAlertInfo] = useState({});
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -21,6 +24,24 @@ const SignUp = () => {
         message: 'Passwords do not match!',
         type: 'warning'
       });
+    } else {
+      const signupResult = await signupUser({
+        username: inputUsername,
+        email: inputEmail,
+        password: inputPassword
+      })
+
+      if (signupResult.success) {
+        setCookie('token', signupResult.data.token);
+        navigate('/files');
+      } else {
+        console.log(signupResult.message)
+        setAlertInfo({
+          show: true,
+          message: Array.isArray(signupResult.message) ? signupResult.message.join('\n') : signupResult.message,
+          type: 'danger'
+        });
+      }
     }
   };
   console.log('alert info - ', alertInfo)
