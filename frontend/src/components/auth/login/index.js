@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Form, Button } from "react-bootstrap";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "./login.css";
 import { setCookie } from "../../../helpers";
 import CustomAlert from "../../../ui/customerAlert";
@@ -22,17 +22,18 @@ const Login = () => {
     });
 
     if (loginResult.success) {
-      setCookie(loginResult.data.token);
+      setCookie('token', loginResult.data.token);
       navigate('/files');
     } else {
       setAlertInfo({
         show: true,
         message: Array.isArray(loginResult.message) ? loginResult.message.join('\n') : loginResult.message,
         type: 'danger'
-      })
+      });
     }
   };
-// TODO: add a page to set password
+
+  // TODO: add a page to set password
   const handleForgotPassword = () => { console.log(inputPassword) };
 
   return (
@@ -74,9 +75,9 @@ const Login = () => {
         {/* <Form.Group className="mb-2" controlId="checkbox">
           <Form.Check type="checkbox" label="Remember me" />
         </Form.Group> */}
-          <Button className="w-100" variant="primary" type="submit">
-            Log In
-          </Button>
+        <Button className="w-100" variant="primary" type="submit">
+          Log In
+        </Button>
         <div className="d-grid justify-content-end">
           <Button
             className="text-muted px-0"
