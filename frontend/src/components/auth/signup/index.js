@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { Form, Button } from "react-bootstrap";
+import { Form, Button, Alert } from "react-bootstrap";
+import { signupUser } from "../../../apis";
+import CustomAlert from "../../../ui/customerAlert";
 import BackgroundImage from "../../../assets/images/background.png";
 import "./signup.css";
 
@@ -8,13 +10,20 @@ const SignUp = () => {
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [inputConfirmPassword, setInputConfirmPassword] = useState("");
+  const [alertInfo, setAlertInfo] = useState({});
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log(`Username :${inputUsername}, Email :${inputEmail}, Password :${inputPassword}, Confirm Password :${inputConfirmPassword}`);
-    // Add your sign up logic here
-  };
 
+    if (inputPassword !== inputConfirmPassword) {
+      setAlertInfo({
+        show: true,
+        message: 'Passwords do not match!',
+        type: 'warning'
+      });
+    }
+  };
+  console.log('alert info - ', alertInfo)
   return (
     <div className="sign-up__wrapper"
     style={{ backgroundImage: `url(${BackgroundImage})` }}
@@ -65,6 +74,12 @@ const SignUp = () => {
           Sign Up
         </Button>
       </Form>
+      <div>
+        <CustomAlert
+          alertInfo={alertInfo}
+          setAlertInfo={setAlertInfo}
+        />
+      </div>
     </div>
   );
 };
