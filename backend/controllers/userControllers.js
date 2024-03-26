@@ -4,6 +4,18 @@ const { validateEmail, validatePassword, createToken } = require('../helpers');
 
 module.exports = {
     signupUser: async (username, email, password, callback) => {
+        const existingUsername = await User.findOne({ username });
+        if (existingUsername) {
+            callback(false, { message: 'Username already exists' });
+            return;
+        }
+
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            callback(false, { message: 'Email already exists' });
+            return;
+        }
+
         const [isPasswordValid, errors] = validatePassword(password);
         if (!isPasswordValid) {
             callback(false, { message: errors });
@@ -21,7 +33,7 @@ module.exports = {
             const user = new User({ email, username, password: hashedPassword });
             await user.save();
             const newToken = createToken(user);
-            const data = {token: newToken, _id: user._id, email, username };
+            const data = { token: newToken, _id: user._id, email, username };
             callback(true, data);
         } catch (error) {
             callback(false, error);
@@ -39,7 +51,7 @@ module.exports = {
             const loginSuccess = await bcrypt.compare(password, user.password);
             if (loginSuccess) {
                 const newToken = createToken(user);
-                const data = {token: newToken, _id: user._id, email: user.email, username: user.username };
+                const data = { token: newToken, _id: user._id, email: user.email, username: user.username };
                 callback(true, { message: 'Login successful', data });
                 return;
             } else {
