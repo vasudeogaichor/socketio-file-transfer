@@ -27,23 +27,23 @@ server.pre(cors.preflight)
 server.use(cors.actual)
 
 const io = socketIo(server.server, {
-    cors: {
-        // origin: "http://192.168.0.20:8503"
-        origin: "http://localhost:8503"
-        // origin: "https://cruel-impalas-jog.loca.lt"
-    },
-    maxHttpBufferSize: MAX_BUFFER_SIZE,
+  cors: {
+    // origin: "http://192.168.0.20:8503"
+    origin: "http://localhost:8503"
+    // origin: "https://cruel-impalas-jog.loca.lt"
+  },
+  maxHttpBufferSize: MAX_BUFFER_SIZE,
 });
 
 server.use(restify.plugins.bodyParser());
 require('./routes/userRoutes')(server);
 
 io.on('connection', (socket) => {
-    console.log('User connected.');
-    handleFileUpload(socket, MAX_BUFFER_SIZE);
-    handleFileDownload(socket, MAX_BUFFER_SIZE );
-    handleFileList(socket);
-    handleFileDelete(socket);
+  console.log('User connected.');
+  handleFileUpload(socket, MAX_BUFFER_SIZE);
+  handleFileDownload(socket, MAX_BUFFER_SIZE);
+  handleFileList(socket);
+  handleFileDelete(socket);
 });
 
 // server.on('restifyError', errorHandler(req, res));
@@ -51,5 +51,5 @@ io.on('connection', (socket) => {
 // Start server
 const PORT = 8504;
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

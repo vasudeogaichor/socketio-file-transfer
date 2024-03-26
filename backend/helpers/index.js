@@ -49,7 +49,7 @@ function createToken({username, _id}) {
     });
 }
 
-function verifyToken(token) {
+async function verifyToken(token) {
     return new Promise((resolve, reject) => {
         jwt.verify(token, JWT_SECRET, (err, decoded) => {
             if (err) {
@@ -65,5 +65,6 @@ function verifyToken(token) {
 module.exports = {
     validateEmail,
     validatePassword,
-    createToken
+    createToken,
+    verifyToken
 }
