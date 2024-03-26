@@ -16,7 +16,7 @@ const CustomAlert = ({ alertInfo, setAlertInfo }) => {
     
           return () => clearTimeout(timer);
         }
-      }, [show]);
+      }, [show, setAlertInfo]);
     
       if (!isVisible) {
         return null;
