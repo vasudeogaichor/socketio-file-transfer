@@ -24,7 +24,7 @@ const CustomAlert = ({ alertInfo, setAlertInfo }) => {
 
     return (
         <Alert className="my-4" variant={type}>
-            {message.split('\n')?.map((line, index) => (
+            {message?.split('\n')?.map((line, index) => (
                 <React.Fragment key={index}>
                     {line}
                     <br />

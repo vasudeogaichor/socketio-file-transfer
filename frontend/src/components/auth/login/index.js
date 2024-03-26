@@ -1,33 +1,39 @@
 import React, { useState } from "react";
-import { Form, Button, Alert } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap";
+import {useNavigate} from "react-router-dom";
 import "./login.css";
-
+import { setCookie } from "../../../helpers";
+import CustomAlert from "../../../ui/customerAlert";
 import BackgroundImage from "../../../assets/images/background.png";
 import Logo from "../../../assets/images/logo.png";
+import { loginUser } from "../../../apis";
 
 const Login = () => {
   const [inputUsername, setInputUsername] = useState("");
   const [inputPassword, setInputPassword] = useState("");
-
-  const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({});
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    await delay(500);
-    console.log(`Username :${inputUsername}, Password :${inputPassword}`);
-    if (inputUsername !== "admin" || inputPassword !== "admin") {
-      setShow(true);
+    const loginResult = await loginUser({
+      username: inputUsername,
+      password: inputPassword
+    });
+
+    if (loginResult.success) {
+      setCookie(loginResult.data.token);
+      navigate('/files');
+    } else {
+      setAlertInfo({
+        show: true,
+        message: Array.isArray(loginResult.message) ? loginResult.message.join('\n') : loginResult.message,
+        type: 'danger'
+      })
     }
-    setLoading(false);
   };
-
-  const handlePassword = () => {};
-
-  function delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+// TODO: add a page to set password
+  const handleForgotPassword = () => { console.log(inputPassword) };
 
   return (
     <div
@@ -45,19 +51,6 @@ const Login = () => {
           alt="logo"
         />
         <div className="h4 mb-2 text-center">Sign In</div>
-        {/* ALert */}
-        {show ? (
-          <Alert
-            className="mb-2"
-            variant="danger"
-            onClose={() => setShow(false)}
-            dismissible
-          >
-            Incorrect username or password.
-          </Alert>
-        ) : (
-          <div />
-        )}
         <Form.Group className="mb-2" controlId="username">
           <Form.Label>Username</Form.Label>
           <Form.Control
@@ -78,28 +71,28 @@ const Login = () => {
             required
           />
         </Form.Group>
-        <Form.Group className="mb-2" controlId="checkbox">
+        {/* <Form.Group className="mb-2" controlId="checkbox">
           <Form.Check type="checkbox" label="Remember me" />
-        </Form.Group>
-        {!loading ? (
+        </Form.Group> */}
           <Button className="w-100" variant="primary" type="submit">
             Log In
           </Button>
-        ) : (
-          <Button className="w-100" variant="primary" type="submit" disabled>
-            Logging In...
-          </Button>
-        )}
         <div className="d-grid justify-content-end">
           <Button
             className="text-muted px-0"
             variant="link"
-            onClick={handlePassword}
+            onClick={handleForgotPassword}
           >
             Forgot password?
           </Button>
         </div>
       </Form>
+      <div>
+        <CustomAlert
+          alertInfo={alertInfo}
+          setAlertInfo={setAlertInfo}
+        />
+      </div>
       {/* Footer */}
       {/* <div className="w-100 mb-2 position-absolute bottom-0 start-50 translate-middle-x text-white text-center">
         Made by Hendrik C | &copy;2022
