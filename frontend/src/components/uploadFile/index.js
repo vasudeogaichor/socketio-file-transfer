@@ -4,6 +4,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { socket } from "../../socket";
 import FilesTable from "./filesTable";
 import FileInput from "./fileInput";
+import LogoutButton from "../../ui/logoutButton";
 let stream = require('../../../node_modules/socket.io-stream/socket.io-stream');
 
 class FileUploader {
@@ -75,7 +76,7 @@ const FileUpload = () => {
             const uploader = new FileUploader(file);
             uploader.startUpload();
         });
-        
+
         setSelectedFiles([]);
         fileInputRef.current.value = '';
     };
@@ -106,6 +107,9 @@ const FileUpload = () => {
 
     return (
         <div className="container mt-5">
+            <div className='d-flex justify-content-end mb-4'>
+                <LogoutButton />
+            </div>
             <FileInput
                 handleUpload={handleUpload}
                 fileInputRef={fileInputRef}
@@ -116,7 +120,7 @@ const FileUpload = () => {
                     <FilesTable uploadedFiles={uploadedFiles} />
                 </div>
             </div>
-            <ToastContainer /> 
+            <ToastContainer />
         </div>
     );
 };
