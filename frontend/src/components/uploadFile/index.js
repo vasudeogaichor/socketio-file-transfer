@@ -71,7 +71,22 @@ const FileUpload = () => {
 
     const handleUpload = (e) => {
         e.preventDefault();
-
+        if (!selectedFiles?.length) {
+            toast.error(
+                <div>
+                    <div>Please choose a file to upload</div>
+                </div>,
+                {
+                    autoClose: 2000,
+                    closeButton: false,
+                    closeOnClick: false,
+                    draggable: false,
+                    pauseOnHover: false,
+                    position: "bottom-right",
+                }
+            );
+            return;
+        }
         selectedFiles.forEach((file) => {
             const uploader = new FileUploader(file);
             uploader.startUpload();
