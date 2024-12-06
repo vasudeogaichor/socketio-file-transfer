@@ -1,12 +1,13 @@
 const restify = require('restify');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
+require('dotenv').config();
 const corsMiddleware = require('restify-cors-middleware2')
 const errorHandler = require('./errorHandler');
 const { handleFileUpload, handleFileDownload, handleFileList, handleFileDelete } = require('./socketHandlers');
 const MAX_BUFFER_SIZE = 1024 * 1024;
 
-mongoose.connect('mongodb://localhost:27017/filemanagement')
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
   })
@@ -28,9 +29,7 @@ server.use(cors.actual)
 
 const io = socketIo(server.server, {
     cors: {
-        origin: "http://192.168.0.20:8503"
-        // origin: "http://localhost:8503"
-        // origin: "https://cruel-impalas-jog.loca.lt"
+        origin: "http://localhost:8503"
     },
     maxHttpBufferSize: MAX_BUFFER_SIZE,
 });
