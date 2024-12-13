@@ -1,5 +1,7 @@
 import axios from 'axios';
-const BASE_URL = 'http://localhost:8504';
+// const BASE_URL = 'http://localhost:8504';
+const BASE_URL = process.env.REACT_APP_API_URL
+// console.log('BASE_URL - ', BASE_URL)
 
 const makeRequest = async (options) => {
     try {
