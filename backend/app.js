@@ -27,7 +27,17 @@ const cors = corsMiddleware({
 server.pre(cors.preflight)
 server.use(cors.actual)
 
+server.opts('/*', (req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:8503');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.send(200);
+    return next();
+});
+
 const io = socketIo(server.server, {
+    path: '/socketio-file-transfer/socket.io',
     cors: {
         origin: "http://localhost:8503"
     },
