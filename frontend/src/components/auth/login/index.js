@@ -22,7 +22,7 @@ const Login = () => {
     });
 
     if (loginResult.success) {
-      setCookie('token', loginResult.data.token);
+      setCookie('token', loginResult.data?.token);
       navigate('/files');
     } else {
       setAlertInfo({
