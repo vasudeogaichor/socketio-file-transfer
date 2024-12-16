@@ -25,13 +25,19 @@ mongoose
 const server = restify.createServer();
 
 const cors = corsMiddleware({
-  origins: ["*"],
+  origins: ["http://localhost:8503"],
   allowHeaders: ["API-Token"],
   exposeHeaders: ["API-Token-Expiry"],
 });
 
 server.pre(cors.preflight);
 server.use(cors.actual);
+
+server.pre((req, res, next) => {
+    console.log(`Incoming request: ${req.method} ${req.url}`);
+    console.log('Origin:', req.headers.origin || 'No Origin Header');
+    return next();
+});
 
 server.opts("/*", (req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:8503");
@@ -45,7 +51,7 @@ server.opts("/*", (req, res, next) => {
 const io = socketIo(server.server, {
   path: "/socketio-file-transfer/socket.io",
   cors: {
-    origin: "http://localhost:8503",
+    origin: ["http://localhost:8503", "https://vasudeogaichor.site"],
     methods: ["GET", "POST"],
   },
   maxHttpBufferSize: MAX_BUFFER_SIZE,
